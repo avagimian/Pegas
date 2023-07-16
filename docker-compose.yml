@@ -1,0 +1,75 @@
+version: '3'
+services:
+    pegas-api-php:
+        container_name: pegas-api-php
+        hostname: pegas-api-php
+        restart: unless-stopped
+        build:
+            context: ./
+        volumes:
+            - .:/var/www/html
+        networks:
+            - pegas-api-network
+        depends_on:
+            - pegas-api-redis
+            - pegas-api-postgres
+            - pegas-api-postgres-test
+
+    pegas-api-nginx:
+        image: nginx:1.23.1-alpine
+        container_name: pegas-api-nginx
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "8080:80"
+        volumes:
+            - ./:/var/www/html
+            - ./nginx/:/etc/nginx/conf.d/
+        networks:
+            - pegas-api-network
+
+    pegas-api-postgres:
+        image: postgres:14.4-alpine
+        container_name: pegas-api-postgres
+        restart: unless-stopped
+        ports:
+            - "5434:5432"
+        networks:
+            - pegas-api-network
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: secret
+            POSTGRES_DB: pegas
+            POSTGRES_HOST_AUTH_METHOD: "trust"
+        hostname: pegas-api-postgres
+
+    pegas-api-postgres-test:
+        image: postgres:14.4-alpine
+        container_name: pegas-api-postgres-test
+        restart: unless-stopped
+        ports:
+            - "5435:5432"
+        networks:
+            - pegas-api-network
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: secret
+            POSTGRES_DB: pegas
+            POSTGRES_HOST_AUTH_METHOD: "trust"
+        hostname: pegas-api-postgres-test
+
+
+    pegas-api-redis:
+        image: redis:7.0.4-alpine3.16
+        container_name: pegas-api-redis
+        restart: unless-stopped
+        ports:
+            - "6380:6379"
+        tty: true
+        networks:
+            - pegas-api-network
+        hostname: pegas-api-redis
+
+networks:
+    pegas-api-network:
+        driver: bridge
